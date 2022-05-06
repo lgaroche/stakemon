@@ -5,7 +5,7 @@ use serenity::framework::StandardFramework;
 use tokio::time;
 use tokio::task;
 use log::{info, error, warn};
-use serenity::model::prelude::application_command::ApplicationCommandOptionType;
+use serenity::model::prelude::application_command::{ApplicationCommandInteractionDataOption, ApplicationCommandOptionType};
 use crate::monitor::{Monitor, Account};
 
 struct Handler;
@@ -119,27 +119,24 @@ impl EventHandler for Handler {
                     let data = ctx.data.read().await;
                     match data.get::<MonitorData>() {
                         Some(monitor) => {
-                            if command.data.options.len() != 1 {
-                                "wrong argument".to_string()
-                            } else {
-                                match &command.data.options[0].value {
-                                    Some(v) => {
-                                        match v.as_u64() {
-                                            Some(validator_index) => {
-                                                let account = Account::new(command.user.id.0, validator_index);
-                                                match monitor.watch(account) {
-                                                    Ok(()) => "start watching".to_string(),
-                                                    Err(e) => {
-                                                        error!("failed to start watching: {}", e);
-                                                        "failed to start watching".to_string()
-                                                    }
-                                                }
-                                            },
-                                            None => "wrong argument".to_string()
+                            match unwrap_first_option_as_u64(&command.data.options) {
+                                Some(validator_index) => {
+                                    let account = Account::new(command.user.id.0, validator_index);
+                                    match monitor.watch(account) {
+                                        Ok(()) => {
+                                            info!("start watching {}", validator_index);
+                                            format!("Started watching validator {}, \
+                                                        I will check your validator balance \
+                                                        every 5 minutes and send you a direct \
+                                                        message if something goes wrong", validator_index).to_string()
+                                        },
+                                        Err(e) => {
+                                            error!("failed to start watching: {}", e);
+                                            "failed to start watching".to_string()
                                         }
-                                    },
-                                    None => "wrong argument".to_string()
+                                    }
                                 }
+                                None => "wrong argument".to_string()
                             }
                         }
                         None => "failed to start watching".to_string()
@@ -148,11 +145,25 @@ impl EventHandler for Handler {
                 "forget" => {
                     let data = ctx.data.read().await;
                     match data.get::<MonitorData>() {
-                        Some(_) => {
-                            //state.insert("bla", "0").unwrap();
-                            "stop watching".to_string()
+                        Some(monitor) => {
+                            match unwrap_first_option_as_u64(&command.data.options) {
+                                Some(validator_index) => {
+                                    let account = Account::new(command.user.id.0, validator_index);
+                                    match monitor.forget(account) {
+                                        Ok(()) => {
+                                            info!("forget {}", validator_index);
+                                            format!("Stopped watching validator {}", validator_index).to_string()
+                                        },
+                                        Err(e) => {
+                                            error!("failed to stop watching: {}", e);
+                                            "failed to start watching".to_string()
+                                        }
+                                    }
+                                }
+                                None => "wrong argument".to_string()
+                            }
                         }
-                        None => "failed to stop watching".to_string()
+                        None => "failed to start watching".to_string()
                     }
                 }
                 _ => "not implemented".to_string()
@@ -166,5 +177,15 @@ impl EventHandler for Handler {
                 warn!("Cannot respond to command: {}", why);
             }
         }
+    }
+}
+
+fn unwrap_first_option_as_u64(options: &Vec<ApplicationCommandInteractionDataOption>) -> Option<u64> {
+    match options.first().as_ref() {
+        Some(&option) => match &option.value {
+            Some(v) => v.as_u64(),
+            None => None
+        },
+        None => None
     }
 }

@@ -110,7 +110,7 @@ impl Monitor {
         }
     }
 
-    pub fn _forget(&self, account: Account) -> Result<(), Error>{
+    pub fn forget(&self, account: Account) -> Result<(), Error>{
         match self.db.remove(account.key()) {
             Err(e) => Err(Error::SledError(e)),
             Ok(_) => Ok(())
