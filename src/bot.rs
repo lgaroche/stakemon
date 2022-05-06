@@ -5,7 +5,7 @@ use serenity::framework::StandardFramework;
 use tokio::time;
 use tokio::task;
 use log::{info, error, warn};
-use serenity::model::prelude::application_command::{ApplicationCommandInteractionDataOption, ApplicationCommandOptionType};
+use serenity::model::prelude::application_command::{ApplicationCommand, ApplicationCommandInteractionDataOption, ApplicationCommandOptionType};
 use crate::monitor::{Monitor, Account};
 
 struct Handler;
@@ -54,8 +54,7 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         info!("{} is connected!", ready.user.name);
 
-        let id = GuildId(970078563367800902);
-        if let Err(why) = GuildId::set_application_commands(&id, &ctx.http, |c| {
+        if let Err(why) = ApplicationCommand::set_global_application_commands(&ctx.http, |c| {
             c.create_application_command(|command| {
                 command
                     .name("watch")
