@@ -86,7 +86,7 @@ impl EventHandler for Handler {
             let data = ctx.data.read().await;
             if let Some(monitor) = data.get::<MonitorData>() {
 
-                let mut interval = time::interval(time::Duration::from_secs(300));
+                let mut interval = time::interval(time::Duration::from_secs(monitor.interval));
                 loop {
                     interval.tick().await;
 

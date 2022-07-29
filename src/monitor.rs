@@ -5,7 +5,8 @@ use crate::balance::{ValidatorBalanceChecker, ValidatorBalanceError};
 
 pub struct Monitor {
     db: sled::Db,
-    balance_checker: ValidatorBalanceChecker
+    balance_checker: ValidatorBalanceChecker,
+    pub interval: u64
 }
 
 #[derive(Debug, Clone)]
@@ -96,10 +97,11 @@ impl From<Vec<u8>> for Account {
 
 impl Monitor {
 
-    pub fn new(state_path: &str, validator_api_url: &str) -> Result<Self, Error> {
+    pub fn new(state_path: &str, validator_api_url: &str, interval: u64) -> Result<Self, Error> {
         Ok(Monitor {
             db: sled::open(state_path)?,
-            balance_checker: ValidatorBalanceChecker::new(validator_api_url)
+            balance_checker: ValidatorBalanceChecker::new(validator_api_url),
+            interval
         })
     }
 
